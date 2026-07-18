@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GST & e-Invoicing AI Assistant</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --navy:         #1a3a5c;
+      --navy-dark:    #0f2540;
+      --teal:         #0d7377;
+      --teal-light:   #14a085;
+      --teal-pale:    rgba(13,115,119,0.08);
+      --green:        #27ae60;
+      --orange:       #e67e22;
+      --orange-light: #f39c12;
+      --bg:           #eef2f7;
+      --card:         #ffffff;
+      --border:       #d4dde8;
+      --text:         #1e2d3d;
+      --text-muted:   #6b7c93;
+      --shadow:       0 2px 12px rgba(26,58,92,0.10);
+      --shadow-md:    0 4px 24px rgba(26,58,92,0.14);
+    }
+
+    html, body { height: 100%; margin: 0; overflow: hidden; font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+    /* Subtle dot-grid background */
+    body::before {
+      content: '';
+      position: fixed; inset: 0; pointer-events: none; z-index: 0;
+      background-image:
+        radial-gradient(circle at 15% 85%, rgba(13,115,119,0.07) 0%, transparent 45%),
+        radial-gradient(circle at 85% 15%, rgba(39,174,96,0.05) 0%, transparent 45%),
+        radial-gradient(circle at 50% 50%, rgba(26,58,92,0.03) 0%, transparent 60%);
+    }
+
+    #app { height: 100%; overflow: hidden; display: flex; flex-direction: column; position: relative; z-index: 1; }
+
+    /* ══════════════════════════════════
+       HEADER
+    ══════════════════════════════════ */
+    .header {
+      background: linear-gradient(135deg, var(--navy-dark) 0%, var(--teal) 100%);
+      padding: 0 20px;
+      height: 62px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+      box-shadow: 0 2px 20px rgba(15,37,64,0.35);
+      position: relative;
+      overflow: hidden;
+    }
+    .header::before {
+      content: ''; position: absolute; right: -30px; top: -30px;
+      width: 130px; height: 130px; border: 2px solid rgba(255,255,255,0.07); border-radius: 50%;
+    }
+    .header::after {
+      content: ''; position: absolute; right: 30px; top: -50px;
+      width: 180px; height: 180px; border: 1.5px solid rgba(255,255,255,0.04); border-radius: 50%;
+    }
+    .header-left { display: flex; align-items: center; gap: 11px; }
+    .logo-wrap {
+      width: 38px; height: 38px;
+      background: rgba(255,255,255,0.13);
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; backdrop-filter: blur(8px);
+    }
+    .header-title h1 { font-size: 15px; font-weight: 800; color: #fff; letter-spacing: 0.01em; line-height: 1.2; }
+    .header-title p  { font-size: 11px; color: rgba(255,255,255,0.58); font-weight: 400; margin-top: 1px; }
+    .header-right { display: flex; align-items: center; gap: 10px; }
+    .live-badge {
+      background: rgba(39,174,96,0.2);
+      border: 1px solid rgba(39,174,96,0.45);
+      color: #7debb0;
+      padding: 4px 11px; border-radius: 20px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
+      display: flex; align-items: center; gap: 5px;
+    }
+    .live-dot { width: 6px; height: 6px; background: #27ae60; border-radius: 50%; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    /* ══════════════════════════════════
+       TABS
+    ══════════════════════════════════ */
+    .tabs-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex; padding: 0 16px;
+      flex-shrink: 0;
+    }
+    .tab-btn {
+      padding: 11px 18px;
+      font-size: 13px; font-weight: 600;
+      color: var(--text-muted);
+      background: none; border: none; cursor: pointer;
+      border-bottom: 2.5px solid transparent;
+      transition: all 0.2s;
+      font-family: inherit;
+      display: flex; align-items: center; gap: 6px;
+      white-space: nowrap;
+    }
+    .tab-btn:hover { color: var(--teal); }
+    .tab-btn.active { color: var(--teal); border-bottom-color: var(--teal); }
+
+    /* ══════════════════════════════════
+       LAYOUT
+    ══════════════════════════════════ */
+    .main { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
+    .tab-panel { display: none; flex: 1; overflow: hidden; flex-direction: column; }
+    .tab-panel.active { display: flex; }
+
+    /* ══════════════════════════════════
+       CHAT PANEL LAYOUT
+    ══════════════════════════════════ */
+    .chat-layout { display: flex; flex: 1; overflow: hidden; }
+
+    /* ── Sidebar ── */
+    .doc-sidebar {
+      width: 252px; flex-shrink: 0;
+      border-right: 1px solid var(--border);
+      background: var(--card);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .sidebar-section-title {
+      padding: 12px 14px 8px;
+      font-size: 10.5px; font-weight: 800;
+      text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+    }
+    .upload-zone {
+      margin: 10px;
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 14px 10px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: #f6f9fd;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--teal); background: var(--teal-pale);
+    }
+    .upload-icon-large { font-size: 26px; margin-bottom: 5px; }
+    .upload-zone p { font-size: 11.5px; color: var(--text-muted); line-height: 1.45; }
+    .upload-zone strong { color: var(--teal); }
+    .upload-types { font-size: 10px; color: #a0aebe; margin-top: 3px; }
+    #fileInput { display: none; }
+
+    .doc-list { flex: 1; overflow-y: auto; padding: 6px; }
+    .doc-empty { padding: 18px 10px; text-align: center; color: var(--text-muted); font-size: 11.5px; line-height: 1.5; }
+    .doc-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 9px; border-radius: 8px;
+      cursor: pointer; transition: background 0.15s;
+      border: 1px solid transparent; margin-bottom: 3px;
+    }
+    .doc-item:hover { background: #f0f6ff; }
+    .doc-item.active { background: var(--teal-pale); border-color: rgba(13,115,119,0.2); }
+    .doc-icon {
+      width: 30px; height: 30px; border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; flex-shrink: 0;
+    }
+    .doc-icon.pdf  { background: #fff0f0; }
+    .doc-icon.txt  { background: #f0f4ff; }
+    .doc-icon.xls  { background: #f0fff4; }
+    .doc-icon.other{ background: #fff8f0; }
+    .doc-meta { flex: 1; min-width: 0; }
+    .doc-name { font-size: 11.5px; font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .doc-sub  { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+    .doc-remove {
+      background: none; border: none; cursor: pointer; color: var(--text-muted);
+      font-size: 13px; padding: 2px 4px; border-radius: 4px; line-height: 1;
+      opacity: 0; transition: opacity 0.15s; flex-shrink: 0;
+    }
+    .doc-item:hover .doc-remove { opacity: 1; }
+
+    .quick-section {
+      padding: 8px 8px 10px;
+      border-top: 1px solid var(--border);
+      background: #fafcff;
+    }
+    .quick-title {
+      font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.09em;
+      color: var(--text-muted); padding: 0 4px 6px;
+    }
+    .quick-btn {
+      display: block; width: 100%; text-align: left;
+      padding: 6px 9px;
+      font-size: 11.5px; color: var(--navy);
+      background: white; border: 1px solid var(--border); border-radius: 7px;
+      cursor: pointer; margin-bottom: 4px; font-family: inherit;
+      transition: all 0.15s; line-height: 1.35;
+    }
+    .quick-btn:hover { background: var(--teal-pale); border-color: var(--teal); color: var(--teal); }
+
+    /* ── Chat Area ── */
+    .chat-area { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+    .messages {
+      flex: 1; overflow-y: auto; padding: 18px 20px;
+      display: flex; flex-direction: column; gap: 12px;
+    }
+
+    .message { display: flex; gap: 9px; max-width: 88%; animation: msgIn 0.22s ease; }
+    @keyframes msgIn { from{opacity:0;transform:translateY(7px)} to{opacity:1;transform:translateY(0)} }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+    .message.bot  { align-self: flex-start; }
+
+    .msg-av {
+      width: 30px; height: 30px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; flex-shrink: 0; margin-top: 2px;
+    }
+    .message.bot  .msg-av { background: linear-gradient(135deg, var(--teal), var(--navy)); color: white; }
+    .message.user .msg-av { background: linear-gradient(135deg, var(--orange), var(--orange-light)); color: white; }
+
+    .msg-bubble {
+      padding: 9px 13px; border-radius: 12px;
+      font-size: 13.5px; line-height: 1.58;
+    }
+    .message.bot .msg-bubble {
+      background: var(--card); color: var(--text);
+      border: 1px solid var(--border); border-bottom-left-radius: 3px;
+      box-shadow: var(--shadow);
+    }
+    .message.user .msg-bubble {
+      background: linear-gradient(135deg, var(--teal), var(--navy));
+      color: white; border-bottom-right-radius: 3px;
+    }
+    .msg-time { font-size: 10px; color: var(--text-muted); margin-top: 3px; }
+    .message.bot  .msg-time { text-align: left; }
+    .message.user .msg-time { text-align: right; }
+
+    .msg-content h4 { font-size: 13.5px; font-weight: 700; margin-bottom: 5px; }
+    .msg-content ul { padding-left: 16px; margin: 4px 0; }
+    .msg-content li { margin-bottom: 3px; }
+    .msg-content p  { margin-bottom: 5px; }
+    .msg-content p:last-child { margin-bottom: 0; }
+    .msg-content strong { font-weight: 700; }
+    .msg-content em { font-style: italic; }
+    .msg-content code {
+      background: rgba(13,115,119,0.1); padding: 1px 5px; border-radius: 4px;
+      font-family: 'DM Mono', monospace; font-size: 12px; color: var(--teal);
+    }
+    .message.user .msg-content code { background: rgba(255,255,255,0.18); color: rgba(255,255,255,0.95); }
+    .msg-content .section-divider { border: none; border-top: 1px solid var(--border); margin: 8px 0; }
+
+    /* Typing indicator */
+    .typing-anim { display: flex; gap: 4px; padding: 10px 13px; }
+    .t-dot { width: 7px; height: 7px; background: var(--text-muted); border-radius: 50%; animation: tdot 1.2s infinite; }
+    .t-dot:nth-child(2) { animation-delay: 0.2s; }
+    .t-dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes tdot { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-7px)} }
+
+    /* ── Input Area ── */
+    .chat-input-area {
+      padding: 12px 18px 14px;
+      background: var(--card);
+      border-top: 1px solid var(--border);
+    }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .chat-textarea {
+      flex: 1; padding: 9px 13px;
+      border: 1.5px solid var(--border); border-radius: 12px;
+      font-family: inherit; font-size: 13.5px; color: var(--text);
+      background: #f6f9fd; resize: none; min-height: 40px; max-height: 120px;
+      outline: none; transition: border-color 0.2s, background 0.2s;
+      line-height: 1.5;
+    }
+    .chat-textarea:focus { border-color: var(--teal); background: white; }
+    .chat-textarea::placeholder { color: var(--text-muted); }
+    .send-btn {
+      width: 40px; height: 40px; flex-shrink: 0;
+      background: linear-gradient(135deg, var(--teal), var(--navy));
+      border: none; border-radius: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px; color: white;
+      transition: all 0.2s; box-shadow: 0 2px 8px rgba(13,115,119,0.3);
+    }
+    .send-btn:hover:not(:disabled) { transform: scale(1.06); box-shadow: 0 4px 14px rgba(13,115,119,0.45); }
+    .send-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .input-footer {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 5px;
+    }
+    .input-hint { font-size: 10.5px; color: var(--text-muted); }
+    .doc-active-badge {
+      font-size: 10.5px; color: var(--teal); font-weight: 600;
+      background: var(--teal-pale); padding: 2px 8px; border-radius: 10px;
+      display: none;
+    }
+
+    /* ══════════════════════════════════
+       STATUS PANELS (IRN + EWB)
+    ══════════════════════════════════ */
+    .status-panel { flex: 1; overflow-y: auto; padding: 22px 20px; }
+    .status-card  { max-width: 580px; margin: 0 auto; }
+
+    .panel-heading {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 4px;
+    }
+    .panel-heading-icon {
+      width: 42px; height: 42px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--teal), var(--navy));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px; flex-shrink: 0;
+    }
+    .panel-heading h2 { font-size: 18px; font-weight: 800; color: var(--navy); }
+    .panel-desc { font-size: 12.5px; color: var(--text-muted); margin-bottom: 20px; padding-left: 52px; }
+
+    .form-block { margin-bottom: 14px; }
+    .form-label {
+      display: block; font-size: 11px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.07em;
+      color: var(--text-muted); margin-bottom: 5px;
+    }
+    .form-input {
+      width: 100%; padding: 10px 13px;
+      border: 1.5px solid var(--border); border-radius: 9px;
+      font-family: 'DM Mono', monospace; font-size: 13px; color: var(--text);
+      background: var(--card); outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(13,115,119,0.08); }
+    .form-input::placeholder { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--text-muted); font-size: 12.5px; }
+
+    .check-btn {
+      width: 100%; padding: 11px;
+      background: linear-gradient(135deg, var(--teal), var(--navy));
+      color: white; border: none; border-radius: 9px;
+      font-size: 13.5px; font-weight: 700; cursor: pointer;
+      font-family: inherit; transition: all 0.2s; letter-spacing: 0.02em;
+      box-shadow: 0 3px 10px rgba(13,115,119,0.3);
+    }
+    .check-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 18px rgba(13,115,119,0.4); }
+    .check-btn:disabled { opacity: 0.6; transform: none; cursor: not-allowed; }
+
+    .result-box {
+      margin-top: 18px; padding: 16px; border-radius: 12px;
+      border: 1px solid var(--border); background: var(--card);
+      box-shadow: var(--shadow); animation: msgIn 0.28s ease;
+    }
+    .result-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+    .result-title { font-size: 13.5px; font-weight: 700; color: var(--navy); }
+    .status-pill {
+      padding: 3px 11px; border-radius: 20px;
+      font-size: 11.5px; font-weight: 700; letter-spacing: 0.03em;
+    }
+    .pill-valid    { background: #e6f7ee; color: #167a3c; }
+    .pill-invalid  { background: #fdecea; color: #b71c1c; }
+    .pill-warning  { background: #fff8e1; color: #b45309; }
+
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+    .rfield {
+      padding: 9px 11px; background: #f6f9fd; border-radius: 8px;
+    }
+    .rfield.full  { grid-column: 1 / span 2; }
+    .rfield.accentL { border-left: 3px solid var(--orange); }
+    .rfield-label { font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-muted); margin-bottom: 3px; }
+    .rfield-value { font-size: 12px; font-weight: 600; color: var(--text); font-family: 'DM Mono', monospace; word-break: break-all; }
+    .rfield-value.prose { font-family: 'Plus Jakarta Sans', sans-serif; font-size: 12px; font-weight: 400; line-height: 1.5; }
+
+    .info-trio {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; margin-top: 20px;
+    }
+    .trio-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 11px; padding: 13px;
+      border-top: 3px solid var(--teal);
+    }
+    .trio-icon  { font-size: 20px; margin-bottom: 7px; }
+    .trio-title { font-size: 11.5px; font-weight: 700; color: var(--navy); margin-bottom: 3px; }
+    .trio-desc  { font-size: 11px; color: var(--text-muted); line-height: 1.45; }
+
+    .demo-notice {
+      margin-top: 14px; padding: 9px 13px;
+      background: rgba(230,126,34,0.07);
+      border: 1px solid rgba(230,126,34,0.22);
+      border-radius: 9px;
+      font-size: 11.5px; color: #7a4800; line-height: 1.5;
+    }
+
+    /* ══════════════════════════════════
+       SCROLLBAR
+    ══════════════════════════════════ */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #c5d1e0; border-radius: 4px; }
+  </style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ HEADER ═══ -->
+  <header class="header">
+    <div class="header-left">
+      <div class="logo-wrap">🧾</div>
+      <div class="header-title">
+        <h1>GST &amp; e-Invoicing Assistant</h1>
+        <p>AI-Powered · Compliant with GST Council India · FY 2024-25</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="live-badge"><span class="live-dot"></span>AI ACTIVE</div>
+    </div>
+  </header>
+
+  <!-- ═══ TABS ═══ -->
+  <div class="tabs-bar">
+    <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">💬 AI Chat</button>
+    <button class="tab-btn"        id="tab-irn"  onclick="switchTab('irn')">🔍 IRN Status</button>
+    <button class="tab-btn"        id="tab-ewb"  onclick="switchTab('ewb')">🚛 e-Way Bill</button>
+  </div>
+
+  <!-- ═══ MAIN ═══ -->
+  <div class="main">
+
+    <!-- ▶ CHAT PANEL ◀ -->
+    <div class="tab-panel active" id="panel-chat">
+      <div class="chat-layout">
+
+        <!-- Sidebar -->
+        <div class="doc-sidebar">
+          <div class="sidebar-section-title">📎 Documents</div>
+
+          <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon-large">📄</div>
+            <p><strong>Upload Document</strong><br>Drag &amp; drop or click</p>
+            <div class="upload-types">PDF · TXT · CSV · XLSX · DOCX · JSON</div>
+          </div>
+          <input type="file" id="fileInput" accept=".pdf,.txt,.csv,.xlsx,.xls,.docx,.json" multiple />
+
+          <div class="doc-list" id="docList">
+            <div class="doc-empty">No documents yet.<br>Upload to analyse your invoices.</div>
+          </div>
+
+          <div class="quick-section">
+            <div class="quick-title">Quick Questions</div>
+            <button class="quick-btn" onclick="sendQuick('What is e-Invoicing under GST and who needs to comply?')">What is e-Invoicing?</button>
+            <button class="quick-btn" onclick="sendQuick('What is the turnover threshold for mandatory e-Invoicing?')">Turnover threshold</button>
+            <button class="quick-btn" onclick="sendQuick('How is an IRN generated? Explain the step-by-step process.')">How to generate IRN?</button>
+            <button class="quick-btn" onclick="sendQuick('What are penalties for non-compliance with e-Invoice under GST?')">Penalties for non-compliance</button>
+            <button class="quick-btn" onclick="sendQuick('What are the mandatory fields in a GST tax invoice?')">Mandatory GST fields</button>
+            <button class="quick-btn" onclick="sendQuick('Explain the difference between CGST, SGST and IGST.')">CGST vs SGST vs IGST</button>
+          </div>
+        </div>
+
+        <!-- Chat area -->
+        <div class="chat-area">
+          <div class="messages" id="messages">
+            <div class="message bot">
+              <div class="msg-av">🤖</div>
+              <div>
+                <div class="msg-bubble">
+                  <div class="msg-content">
+                    <h4>👋 Hello! I'm your GST &amp; e-Invoicing Expert</h4>
+                    <p>I can help you with:</p>
+                    <ul>
+                      <li>📋 <strong>GST Compliance</strong> – rates, returns, ITC, RCM</li>
+                      <li>🧾 <strong>e-Invoicing</strong> – IRN, IRP, QR codes, JSON schema</li>
+                      <li>🚛 <strong>e-Way Bills</strong> – generation, validity, extension rules</li>
+                      <li>📄 <strong>Document Analysis</strong> – upload your invoice and ask anything</li>
+                    </ul>
+                    <p>Upload a document on the left, or just type your question below!</p>
+                  </div>
+                </div>
+                <div class="msg-time">Just now</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="chat-input-area">
+            <div class="input-row">
+              <textarea
+                class="chat-textarea"
+                id="chatInput"
+                placeholder="Ask about GST, e-Invoice, IRN, e-Way Bill, ITC…"
+                rows="1"
+                onkeydown="handleKey(event)"
+                oninput="autoResize(this)"
+              ></textarea>
+              <button class="send-btn" id="sendBtn" onclick="sendMessage()" title="Send">➤</button>
+            </div>
+            <div class="input-footer">
+              <span class="input-hint">Enter to send &nbsp;·&nbsp; Shift+Enter for new line</span>
+              <span class="doc-active-badge" id="docBadge">📎 doc active</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ▶ IRN STATUS PANEL ◀ -->
+    <div class="tab-panel" id="panel-irn">
+      <div class="status-panel">
+        <div class="status-card">
+          <div class="panel-heading">
+            <div class="panel-heading-icon">🔍</div>
+            <h2>IRN Status Checker</h2>
+          </div>
+          <p class="panel-desc">Enter the 64-character Invoice Reference Number to validate its format and get AI-powered compliance guidance.</p>
+
+          <div class="form-block">
+            <label class="form-label">Invoice Reference Number (IRN) *</label>
+            <input class="form-input" type="text" id="irnInput" placeholder="Enter 64-character SHA-256 IRN hash" maxlength="64" />
+          </div>
+          <div class="form-block">
+            <label class="form-label">Supplier GSTIN (optional)</label>
+            <input class="form-input" type="text" id="gstinInput" placeholder="e.g. 29AABCT1332L1ZD" maxlength="15" style="text-transform:uppercase" />
+          </div>
+          <button class="check-btn" id="irnCheckBtn" onclick="checkIRN()">🔍 Validate &amp; Check IRN</button>
+          <div id="irnResult"></div>
+
+          <div class="info-trio">
+            <div class="trio-card">
+              <div class="trio-icon">🔐</div>
+              <div class="trio-title">What is IRN?</div>
+              <div class="trio-desc">A unique 64-character SHA-256 hash generated by the IRP for each registered e-Invoice.</div>
+            </div>
+            <div class="trio-card">
+              <div class="trio-icon">⏳</div>
+              <div class="trio-title">IRN Validity</div>
+              <div class="trio-desc">IRN is permanent and cannot be modified. Cancellation only allowed within 24 hours of generation.</div>
+            </div>
+            <div class="trio-card">
+              <div class="trio-icon">🏛️</div>
+              <div class="trio-title">IRP Portals</div>
+              <div class="trio-desc">6 IRPs authorised: NIC, Clear (formerly ClearTax), IRIS, Cygnet, EY and GSTN.</div>
+            </div>
+          </div>
+
+          <div class="demo-notice">
+            ⚠️ <strong>Integration Note:</strong> Live IRN lookup requires integration with the NIC IRP API (<code>api.einvoice1.gst.gov.in</code>). This app validates IRN format and provides AI compliance guidance. See the README for full production API integration steps.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ▶ E-WAY BILL PANEL ◀ -->
+    <div class="tab-panel" id="panel-ewb">
+      <div class="status-panel">
+        <div class="status-card">
+          <div class="panel-heading">
+            <div class="panel-heading-icon">🚛</div>
+            <h2>e-Way Bill Status</h2>
+          </div>
+          <p class="panel-desc">Enter the 12-digit e-Way Bill number to validate its format and get AI-powered guidance on validity and compliance.</p>
+
+          <div class="form-block">
+            <label class="form-label">e-Way Bill Number (EWB No.) *</label>
+            <input class="form-input" type="text" id="ewbInput" placeholder="Enter 12-digit EWB number" maxlength="12" />
+          </div>
+          <div class="form-block">
+            <label class="form-label">Vehicle Number (optional)</label>
+            <input class="form-input" type="text" id="vehicleInput" placeholder="e.g. KA01AB1234" maxlength="12" style="text-transform:uppercase" />
+          </div>
+          <button class="check-btn" id="ewbCheckBtn" onclick="checkEWB()">🚛 Check e-Way Bill Status</button>
+          <div id="ewbResult"></div>
+
+          <div class="info-trio">
+            <div class="trio-card">
+              <div class="trio-icon">📦</div>
+              <div class="trio-title">EWB Threshold</div>
+              <div class="trio-desc">Mandatory for goods movement exceeding ₹50,000 in value — both interstate and intrastate.</div>
+            </div>
+            <div class="trio-card">
+              <div class="trio-icon">🗓️</div>
+              <div class="trio-title">Validity Rules</div>
+              <div class="trio-desc">1 day per 200 km for regular cargo. Minimum 1 day. ODC: 1 day per 20 km.</div>
+            </div>
+            <div class="trio-card">
+              <div class="trio-icon">🔄</div>
+              <div class="trio-title">Extension Window</div>
+              <div class="trio-desc">EWB can be extended within 8 hours before expiry or 8 hours after expiry by generator or transporter.</div>
+            </div>
+          </div>
+
+          <div class="demo-notice">
+            ⚠️ <strong>Integration Note:</strong> Live e-Way Bill status requires integration with the NIC EWB API (<code>api.ewaybillgst.gov.in</code>). This app validates format and provides AI guidance. See the README for full production API integration steps.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════
+let docs = [];
+let activeFileId = null;
+let busy = false;
+let history = []; // {role, content}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+(async () => {
+  await ctai.ready();
+  setupDrop();
+})();
+
+// ═══════════════════════════════════════════════
+//  TABS
+// ═══════════════════════════════════════════════
+function switchTab(id) {
+  ['chat','irn','ewb'].forEach(t => {
+    document.getElementById('tab-' + t).classList.toggle('active', t === id);
+    document.getElementById('panel-' + t).classList.toggle('active', t === id);
+  });
+}
+
+// ═══════════════════════════════════════════════
+//  FILE UPLOAD
+// ═══════════════════════════════════════════════
+document.getElementById('fileInput').addEventListener('change', async e => {
+  for (const f of e.target.files) await uploadDoc(f);
+  e.target.value = '';
+});
+
+function setupDrop() {
+  const z = document.getElementById('uploadZone');
+  z.addEventListener('dragover', e => { e.preventDefault(); z.classList.add('drag-over'); });
+  z.addEventListener('dragleave', () => z.classList.remove('drag-over'));
+  z.addEventListener('drop', async e => {
+    e.preventDefault(); z.classList.remove('drag-over');
+    for (const f of e.dataTransfer.files) await uploadDoc(f);
+  });
+}
+
+async function uploadDoc(file) {
+  const uid = Date.now() + '-' + Math.random().toString(36).slice(2);
+  const ext = (file.name.split('.').pop() || '').toLowerCase();
+  const iconMap = { pdf:'📕', txt:'📝', csv:'📊', xlsx:'📊', xls:'📊', docx:'📄', json:'📋' };
+  const colorMap = { pdf:'pdf', txt:'txt', xlsx:'xls', xls:'xls', csv:'xls', docx:'txt' };
+  const doc = {
+    uid, name: file.name, size: fmtSize(file.size),
+    icon: iconMap[ext] || '📎', color: colorMap[ext] || 'other',
+    fileId: null, status: 'uploading'
+  };
+  docs.push(doc);
+  renderDocs();
+
+  try {
+    const res = await ctai.uploadFile(file);
+    doc.fileId = res.file_id || res.entity_id;
+    doc.status = 'ready';
+    activeFileId = doc.fileId;
+    renderDocs(); updateBadge();
+    addBot(`✅ **Document ready:** \`${file.name}\`\n\nI can now answer questions about this document. What would you like to know?`);
+  } catch (err) {
+    doc.status = 'error';
+    renderDocs();
+    addBot(`❌ Upload failed for \`${file.name}\`. Please try again.`);
+  }
+}
+
+function fmtSize(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1048576) return (b/1024).toFixed(1) + ' KB';
+  return (b/1048576).toFixed(1) + ' MB';
+}
+
+function renderDocs() {
+  const el = document.getElementById('docList');
+  if (!docs.length) {
+    el.innerHTML = '<div class="doc-empty">No documents yet.<br>Upload to analyse your invoices.</div>';
+    return;
+  }
+  el.innerHTML = docs.map(d => `
+    <div class="doc-item ${d.fileId === activeFileId ? 'active' : ''}" onclick="setActive('${d.fileId}')">
+      <div class="doc-icon ${d.color}">${d.icon}</div>
+      <div class="doc-meta">
+        <div class="doc-name">${escHtml(d.name)}</div>
+        <div class="doc-sub">${d.status === 'uploading' ? '⏳ Uploading…' : d.status === 'error' ? '❌ Error' : d.size}</div>
+      </div>
+      <button class="doc-remove" onclick="removeDoc('${d.uid}',event)" title="Remove">✕</button>
+    </div>
+  `).join('');
+}
+
+function setActive(fid) { activeFileId = fid; renderDocs(); updateBadge(); }
+function removeDoc(uid, e) {
+  e.stopPropagation();
+  docs = docs.filter(d => d.uid !== uid);
+  if (!docs.length) activeFileId = null;
+  else if (!docs.find(d => d.fileId === activeFileId)) activeFileId = docs[0]?.fileId || null;
+  renderDocs(); updateBadge();
+}
+function updateBadge() {
+  const b = document.getElementById('docBadge');
+  const c = docs.filter(d => d.status === 'ready').length;
+  b.style.display = c ? 'inline' : 'none';
+  b.textContent = `📎 ${c} doc${c > 1 ? 's' : ''} active`;
+}
+
+// ═══════════════════════════════════════════════
+//  CHAT
+// ═══════════════════════════════════════════════
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+function sendQuick(txt) {
+  document.getElementById('chatInput').value = txt;
+  sendMessage();
+}
+function now12() {
+  return new Date().toLocaleTimeString([], { hour:'2-digit', minute:'2-digit' });
+}
+function scrollBot() {
+  const m = document.getElementById('messages');
+  m.scrollTop = m.scrollHeight;
+}
+
+function addBot(md) {
+  const msgs = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'message bot';
+  el.innerHTML = `
+    <div class="msg-av">🤖</div>
+    <div>
+      <div class="msg-bubble"><div class="msg-content">${renderMD(md)}</div></div>
+      <div class="msg-time">${now12()}</div>
+    </div>`;
+  msgs.appendChild(el); scrollBot();
+}
+
+function showTyping() {
+  const msgs = document.getElementById('messages');
+  const el = document.createElement('div');
+  el.className = 'message bot'; el.id = 'typing';
+  el.innerHTML = `
+    <div class="msg-av">🤖</div>
+    <div>
+      <div class="msg-bubble">
+        <div class="typing-anim">
+          <div class="t-dot"></div><div class="t-dot"></div><div class="t-dot"></div>
+        </div>
+      </div>
+    </div>`;
+  msgs.appendChild(el); scrollBot();
+}
+function hideTyping() { const t = document.getElementById('typing'); if (t) t.remove(); }
+
+async function sendMessage() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if (!txt || busy) return;
+
+  inp.value = ''; inp.style.height = 'auto';
+  busy = true; document.getElementById('sendBtn').disabled = true;
+
+  // User bubble
+  const msgs = document.getElementById('messages');
+  const uel = document.createElement('div');
+  uel.className = 'message user';
+  uel.innerHTML = `
+    <div class="msg-av">👤</div>
+    <div>
+      <div class="msg-bubble"><div class="msg-content">${escHtml(txt).replace(/\n/g,'<br>')}</div></div>
+      <div class="msg-time">${now12()}</div>
+    </div>`;
+  msgs.appendChild(uel); scrollBot();
+
+  history.push({ role: 'user', content: txt });
+  showTyping();
+
+  try {
+    const sys = `You are an expert GST and e-Invoicing assistant for Indian businesses. You have comprehensive knowledge of:
+- GST Act 2017 (CGST, SGST, IGST, UTGST), all amendments and notifications up to FY 2024-25
+- e-Invoicing system: IRP portals, IRN generation process, QR code standard, JSON schema (Version 1.1)
+- e-Way Bill rules, validity, extension, multi-vehicle transport
+- Input Tax Credit (ITC) – eligibility, blocked credits (Section 17(5)), reconciliation
+- GST return filing: GSTR-1, GSTR-3B, GSTR-9/9C, IFF, QRMP scheme
+- HSN/SAC codes classification and rates
+- Reverse Charge Mechanism (RCM) – Section 9(3) and 9(4)
+- Composition Scheme (Section 10) and its implications
+- GST audits, scrutiny notices, and demand provisions
+
+Provide accurate, well-structured answers. Use bold for key terms, bullet points for lists, and code blocks for technical strings/formats. Cite relevant sections or notifications when applicable. Be concise yet comprehensive.`;
+
+    // Build prompt with conversation context (last 6 turns)
+    let prompt = '';
+    const recent = history.slice(-7, -1);
+    if (recent.length) {
+      prompt = 'Conversation context:\n';
+      recent.forEach(m => { prompt += `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.content}\n`; });
+      prompt += '\nUser question: ';
+    }
+    prompt += txt;
+    if (activeFileId) prompt += '\n\n[The user has uploaded a document. Analyse it in the context of the question if relevant.]';
+
+    const payload = { system: sys, prompt };
+    if (activeFileId) payload.file_id = activeFileId;
+
+    const res = await ctai.infer(payload);
+    hideTyping();
+
+    const reply = res.content || 'I encountered an issue. Please try again.';
+    history.push({ role: 'assistant', content: reply });
+    addBot(reply);
+
+  } catch (err) {
+    hideTyping();
+    addBot(`❌ **Error:** ${err.message || 'Something went wrong. Please try again.'}`);
+  } finally {
+    busy = false;
+    document.getElementById('sendBtn').disabled = false;
+    inp.focus();
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  IRN CHECKER
+// ═══════════════════════════════════════════════
+async function checkIRN() {
+  const irn   = document.getElementById('irnInput').value.trim();
+  const gstin = document.getElementById('gstinInput').value.trim().toUpperCase();
+  if (!irn) { alert('Please enter an IRN number.'); return; }
+
+  const btn = document.getElementById('irnCheckBtn');
+  btn.disabled = true; btn.textContent = '⏳ Checking…';
+
+  try {
+    const isHex64 = /^[a-fA-F0-9]{64}$/.test(irn);
+    const validGSTIN = !gstin || /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(gstin);
+
+    const res = await ctai.infer({
+      system: 'You are a GST compliance and e-Invoicing technical expert.',
+      prompt: `Analyse the following IRN details:
+IRN: ${irn}
+${gstin ? 'GSTIN: ' + gstin : '(No GSTIN provided)'}
+IRN is 64 hex chars: ${isHex64}
+GSTIN format valid: ${validGSTIN}
+
+Provide:
+1. format_analysis: Brief analysis of the IRN format correctness
+2. irn_info: What the IRN represents technically (SHA-256 hash of Supplier GSTIN + Doc Type + Doc Number + Doc Date)
+3. gstin_analysis: Analysis of GSTIN if provided, else state not provided
+4. recommendation: Key compliance recommendation for the user`,
+      response_schema: {
+        type: 'object',
+        properties: {
+          format_analysis:  { type: 'string' },
+          irn_info:         { type: 'string' },
+          gstin_analysis:   { type: 'string' },
+          recommendation:   { type: 'string' }
+        },
+        required: ['format_analysis','irn_info','gstin_analysis','recommendation']
+      }
+    });
+
+    const d = res.data || {};
+    document.getElementById('irnResult').innerHTML = `
+      <div class="result-box">
+        <div class="result-header">
+          <span class="result-title">IRN Validation Result</span>
+          <span class="status-pill ${isHex64 ? 'pill-valid' : 'pill-invalid'}">${isHex64 ? '✓ Valid Format' : '✗ Invalid Format'}</span>
+        </div>
+        <div class="result-grid">
+          <div class="rfield">
+            <div class="rfield-label">IRN (truncated)</div>
+            <div class="rfield-value">${irn.substring(0,16)}…${irn.substring(56)}</div>
+          </div>
+          <div class="rfield">
+            <div class="rfield-label">Length</div>
+            <div class="rfield-value">${irn.length} chars ${irn.length === 64 ? '✅' : '❌ (need 64)'}</div>
+          </div>
+          ${gstin ? `
+          <div class="rfield">
+            <div class="rfield-label">GSTIN</div>
+            <div class="rfield-value">${gstin}</div>
+          </div>
+          <div class="rfield">
+            <div class="rfield-label">GSTIN Valid</div>
+            <div class="rfield-value">${validGSTIN ? '✅ Valid format' : '❌ Invalid format'}</div>
+          </div>` : ''}
+          <div class="rfield full">
+            <div class="rfield-label">Format Analysis</div>
+            <div class="rfield-value prose">${escHtml(d.format_analysis || '')}</div>
+          </div>
+          <div class="rfield full">
+            <div class="rfield-label">IRN Technical Info</div>
+            <div class="rfield-value prose">${escHtml(d.irn_info || '')}</div>
+          </div>
+          ${gstin ? `<div class="rfield full">
+            <div class="rfield-label">GSTIN Analysis</div>
+            <div class="rfield-value prose">${escHtml(d.gstin_analysis || '')}</div>
+          </div>` : ''}
+          <div class="rfield full accentL">
+            <div class="rfield-label">Compliance Recommendation</div>
+            <div class="rfield-value prose" style="color:#7a4800">${escHtml(d.recommendation || '')}</div>
+          </div>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('irnResult').innerHTML =
+      `<div class="result-box" style="color:red">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🔍 Validate & Check IRN';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  E-WAY BILL CHECKER
+// ═══════════════════════════════════════════════
+async function checkEWB() {
+  const ewb     = document.getElementById('ewbInput').value.trim();
+  const vehicle = document.getElementById('vehicleInput').value.trim().toUpperCase();
+  if (!ewb) { alert('Please enter an e-Way Bill number.'); return; }
+
+  const btn = document.getElementById('ewbCheckBtn');
+  btn.disabled = true; btn.textContent = '⏳ Checking…';
+
+  try {
+    const is12Digit = /^\d{12}$/.test(ewb);
+
+    const res = await ctai.infer({
+      system: 'You are an expert on GST e-Way Bill rules and NIC EWB system.',
+      prompt: `Analyse this e-Way Bill number: ${ewb}
+${vehicle ? 'Vehicle Number: ' + vehicle : '(No vehicle number provided)'}
+EWB is 12 digits: ${is12Digit}
+
+Provide:
+1. format_analysis: Brief analysis of the EWB number format
+2. validity_rules: Key validity period rules applicable (based on distance bands)
+3. compliance_notes: Important compliance points for this EWB
+4. vehicle_analysis: Analyse vehicle number if provided
+5. recommendation: Key action/recommendation for the user`,
+      response_schema: {
+        type: 'object',
+        properties: {
+          format_analysis:  { type: 'string' },
+          validity_rules:   { type: 'string' },
+          compliance_notes: { type: 'string' },
+          vehicle_analysis: { type: 'string' },
+          recommendation:   { type: 'string' }
+        },
+        required: ['format_analysis','validity_rules','compliance_notes','vehicle_analysis','recommendation']
+      }
+    });
+
+    const d = res.data || {};
+    document.getElementById('ewbResult').innerHTML = `
+      <div class="result-box">
+        <div class="result-header">
+          <span class="result-title">e-Way Bill Analysis</span>
+          <span class="status-pill ${is12Digit ? 'pill-valid' : 'pill-invalid'}">${is12Digit ? '✓ Valid Format' : '✗ Invalid Format'}</span>
+        </div>
+        <div class="result-grid">
+          <div class="rfield">
+            <div class="rfield-label">EWB Number</div>
+            <div class="rfield-value">${escHtml(ewb)}</div>
+          </div>
+          <div class="rfield">
+            <div class="rfield-label">Format Check</div>
+            <div class="rfield-value">${is12Digit ? '✅ 12-digit numeric' : '❌ Must be 12 digits'}</div>
+          </div>
+          ${vehicle ? `
+          <div class="rfield">
+            <div class="rfield-label">Vehicle Number</div>
+            <div class="rfield-value">${escHtml(vehicle)}</div>
+          </div>
+          <div class="rfield">
+            <div class="rfield-label">Vehicle Analysis</div>
+            <div class="rfield-value prose">${escHtml(d.vehicle_analysis || '')}</div>
+          </div>` : ''}
+          <div class="rfield full">
+            <div class="rfield-label">Format Analysis</div>
+            <div class="rfield-value prose">${escHtml(d.format_analysis || '')}</div>
+          </div>
+          <div class="rfield full">
+            <div class="rfield-label">Validity Period Rules</div>
+            <div class="rfield-value prose">${escHtml(d.validity_rules || '')}</div>
+          </div>
+          <div class="rfield full">
+            <div class="rfield-label">Compliance Notes</div>
+            <div class="rfield-value prose">${escHtml(d.compliance_notes || '')}</div>
+          </div>
+          <div class="rfield full accentL">
+            <div class="rfield-label">Recommendation</div>
+            <div class="rfield-value prose" style="color:#7a4800">${escHtml(d.recommendation || '')}</div>
+          </div>
+        </div>
+      </div>`;
+  } catch (err) {
+    document.getElementById('ewbResult').innerHTML =
+      `<div class="result-box" style="color:red">Error: ${err.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '🚛 Check e-Way Bill Status';
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════════
+function escHtml(s) {
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function renderMD(text) {
+  // Basic markdown → HTML
+  return text
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,   '<em>$1</em>')
+    .replace(/`([^`\n]+)`/g, '<code>$1</code>')
+    .replace(/^#{3}\s(.+)$/gm, '<h5>$1</h5>')
+    .replace(/^#{2}\s(.+)$/gm, '<h4>$1</h4>')
+    .replace(/^#{1}\s(.+)$/gm, '<h4>$1</h4>')
+    .replace(/^[-•]\s(.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>[\s\S]*?<\/li>)/g, '<ul>$1</ul>')
+    .replace(/\n{2,}/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+</script>
+</body>
+</html>
