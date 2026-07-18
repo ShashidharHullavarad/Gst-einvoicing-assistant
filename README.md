@@ -22,14 +22,13 @@
 | ⚡ **Fast** | Single HTML file, no build step required |
 
 ---
-
 ## 🖼️ Screenshots
 
 ### AI Chat
-![AI Chat view](Screenshot/AI chat view.png)
+![AI Chat view](Screenshot/AI%20chat%20view.png)
 
 ### IRN Status Checker
-![IRN Status Checker](Screenshot/IRN status.png)
+![IRN Status Checker](Screenshot/IRN%20status.png)
 ```
 
 
