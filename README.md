@@ -29,7 +29,7 @@
 ![AI Chat view](Screenshot/AI chat view.png)
 
 ### IRN Status Checker
-![IRN Status Checker](Screenshot/IRN ststus.png)
+![IRN Status Checker](Screenshot/IRN status.png)
 ```
 
 
