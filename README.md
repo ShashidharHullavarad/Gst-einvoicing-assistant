@@ -26,10 +26,10 @@
 ## 🖼️ Screenshots
 
 ### AI Chat
-![AI Chat view]("C:\Users\Shashidhar G H\OneDrive\Desktop\CHAT BOT\Screenshot\Screenshot 2026-07-18 142720 (1).png")
+![AI Chat view](Screenshot/AI chat view.png)
 
 ### IRN Status Checker
-![IRN Status Checker](screenshots/irn-status.png)
+![IRN Status Checker](Screenshot/IRN ststus.png)
 ```
 
 
