@@ -25,25 +25,14 @@
 
 ## 🖼️ Screenshots
 
-```
-┌─────────────────────────────────────────────────────┐
-│  🧾 GST & e-Invoicing Assistant     ● AI ACTIVE      │
-├──────────────┬──────────────────────────────────────┤
-│  💬 AI Chat  │  🔍 IRN Status  │  🚛 e-Way Bill     │
-├──────────────┼─────────────────────────────────────-┤
-│ 📎 Documents │                                       │
-│              │  🤖 Hello! I'm your GST Assistant...  │
-│ [Upload Doc] │                                       │
-│              │  👤 What is e-Invoicing?               │
-│ Quick Qs:    │                                       │
-│ • e-Invoice? │  🤖 e-Invoicing is the system of...   │
-│ • IRN steps  │                                       │
-│ • Penalties  ├───────────────────────────────────────┤
-│              │  [Type your question...        ] [➤]  │
-└──────────────┴───────────────────────────────────────┘
+### AI Chat
+![AI Chat view]("C:\Users\Shashidhar G H\OneDrive\Desktop\CHAT BOT\Screenshot\Screenshot 2026-07-18 142720 (1).png")
+
+### IRN Status Checker
+![IRN Status Checker](screenshots/irn-status.png)
 ```
 
----
+
 
 ## 🚀 Quick Start
 
